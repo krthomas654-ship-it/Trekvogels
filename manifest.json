@@ -1,0 +1,16 @@
+{
+  "name": "Trekvogels nu",
+  "short_name": "Trekvogels",
+  "description": "Welke vogels komen en gaan er nu in Nederland?",
+  "lang": "nl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#E3E9EA",
+  "theme_color": "#24332A",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

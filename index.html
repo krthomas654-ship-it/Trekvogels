@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Trekvogels nu</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#24332A">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Literata:opsz,wght@7..72,400;7..72,600&display=swap" rel="stylesheet">
 <style>
@@ -78,7 +82,7 @@ footer{margin-top:3rem;font-size:.8rem;color:var(--mist)}
 
   <div id="lijst"></div>
 
-  <footer>Versie 2. Foto's via Wikipedia en Wikimedia Commons. Maanden zijn gemiddelden voor Nederland; per jaar en per plek kan het een paar weken schuiven.</footer>
+  <footer>Versie 3. Foto's via Wikipedia en Wikimedia Commons. Maanden zijn gemiddelden voor Nederland; per jaar en per plek kan het een paar weken schuiven.</footer>
 </main>
 
 <script>
@@ -271,6 +275,11 @@ tekenAlles();                                   // eerst zonder foto's
 haalFotos()
   .then(f => { FOTOS = f; tekenAlles(); })      // dan opnieuw, mét foto's
   .catch(() => {});                             // geen internet? dan zonder foto's
+
+/* STAP 6: HET HELPERTJE AANZETTEN (voor gebruik zonder bereik) */
+if ("serviceWorker" in navigator){
+  navigator.serviceWorker.register("service-worker.js").catch(() => {});
+}
 </script>
 </body>
 </html>

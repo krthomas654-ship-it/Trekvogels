@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Trekvogels nu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Literata:opsz,wght@7..72,400;7..72,600&display=swap" rel="stylesheet">
+<style>
+/* ===== KLEUREN (stap 1: hier kun je de kleuren aanpassen) ===== */
+:root{
+  --lucht:#E3E9EA; --veen:#24332A; --riet:#B8902F; --water:#3F6E7E;
+  --blad:#FBFCFA; --mist:#9AA8A3; --leeg:#D3DCDA;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --lucht:#18211C; --veen:#E6ECE8; --riet:#D9B04E; --water:#7FB2C2;
+    --blad:#202B25; --mist:#6E7D77; --leeg:#2F3B35;
+  }
+}
+:root[data-theme="dark"]{
+  --lucht:#18211C; --veen:#E6ECE8; --riet:#D9B04E; --water:#7FB2C2;
+  --blad:#202B25; --mist:#6E7D77; --leeg:#2F3B35;
+}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--lucht);color:var(--veen);font-family:"Literata",Georgia,serif;line-height:1.6}
+main{max-width:640px;margin:0 auto;padding:1.5rem 1.1rem 3rem}
+
+h1{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:700;font-size:clamp(2.2rem,9vw,3.4rem);line-height:1;margin:.5rem 0 .4rem;letter-spacing:-.02em}
+.sub{margin:0 0 1.5rem;color:var(--mist)}
+
+/* ===== MAANDBALK ===== */
+.maanden{display:grid;grid-template-columns:repeat(12,1fr);gap:3px;margin-bottom:.6rem}
+.maanden button{font:600 .72rem "Bricolage Grotesque",sans-serif;border:0;border-radius:4px;padding:.7rem 0;background:var(--leeg);color:var(--veen);cursor:pointer}
+.maanden button[aria-pressed="true"]{background:var(--veen);color:var(--lucht)}
+.maanden button:focus-visible,.vogel summary:focus-visible{outline:2px solid var(--water);outline-offset:2px}
+.legenda{display:flex;flex-wrap:wrap;gap:1rem;font-size:.82rem;color:var(--mist);margin-bottom:2rem}
+.legenda span::before{content:"";display:inline-block;width:.8em;height:.8em;border-radius:2px;margin-right:.35em;vertical-align:-.05em;background:var(--k)}
+
+/* ===== GROEPEN EN VOGELS ===== */
+h2{font-family:"Bricolage Grotesque",sans-serif;font-weight:700;font-size:1.3rem;margin:2rem 0 .6rem}
+h2 small{font-weight:500;color:var(--mist);font-size:.9rem}
+.vogel{background:var(--blad);border-radius:10px;margin-bottom:6px}
+.vogel summary{list-style:none;cursor:pointer;padding:.8rem .9rem;display:grid;grid-template-columns:56px 1fr auto;gap:.15rem .8rem;align-items:center}
+.foto{grid-row:1/3;grid-column:1;width:56px;height:56px;border-radius:8px;object-fit:cover;background:var(--leeg);display:flex;align-items:center;justify-content:center;font:700 1.3rem "Bricolage Grotesque",sans-serif;color:var(--mist)}
+.naam{grid-column:2;grid-row:1}
+.groot{display:block;width:calc(100% - 1.8rem);margin:0 .9rem .5rem;max-height:300px;object-fit:cover;border-radius:8px}
+.bron{display:block;padding:0 .9rem .9rem;font-size:.75rem;color:var(--mist)}
+.bron a{color:inherit}
+.vogel summary::-webkit-details-marker{display:none}
+.naam{font-weight:600}
+.latijn{grid-column:2;grid-row:2;font-style:italic;color:var(--mist);font-size:.85rem}
+.soort{font:500 .78rem "Bricolage Grotesque",sans-serif;color:var(--mist);grid-row:1/3;grid-column:3}
+.jaar{grid-column:1/4;display:grid;grid-template-columns:repeat(12,1fr);gap:2px;margin-top:.4rem}
+.jaar i{height:7px;border-radius:2px;background:var(--leeg)}
+.jaar i.hier{background:var(--mist)}
+.jaar i.komt{background:var(--riet)}
+.jaar i.gaat{background:var(--water)}
+.jaar i.nu{outline:2px solid var(--veen);outline-offset:1px}
+.uitleg{padding:0 .9rem .6rem;margin:0;font-size:.92rem}
+.leeg{color:var(--mist);font-style:italic}
+footer{margin-top:3rem;font-size:.8rem;color:var(--mist)}
+</style>
+</head>
+<body>
+<main>
+  <h1>Trekvogels nu</h1>
+  <p class="sub" id="sub"></p>
+
+  <div class="maanden" id="maanden" role="group" aria-label="Kies een maand"></div>
+  <div class="legenda">
+    <span style="--k:var(--riet)">komt aan</span>
+    <span style="--k:var(--mist)">is hier</span>
+    <span style="--k:var(--water)">vertrekt</span>
+  </div>
+
+  <div id="lijst"></div>
+
+  <footer>Versie 2. Foto's via Wikipedia en Wikimedia Commons. Maanden zijn gemiddelden voor Nederland; per jaar en per plek kan het een paar weken schuiven.</footer>
+</main>
+
+<script>
+/* =========================================================
+   STAP 2: DE VOGELKALENDER
+   Elke vogel heeft:
+   - naam, latijn
+   - soort: "zomer" (broedt hier, overwintert zuidelijk)
+            of "winter" (komt hier overwinteren uit het noorden)
+   - komt: maanden waarin hij aankomt   (1 = januari)
+   - gaat: maanden waarin hij vertrekt
+   - tip:  iets om op te letten
+   Wil je een vogel toevoegen? Kopieer een regel en pas hem aan.
+   ========================================================= */
+const VOGELS = [
+  // --- zomergasten ---
+  {naam:"Grutto", latijn:"Limosa limosa", soort:"zomer", komt:[2,3], gaat:[6,7], tip:"Onze nationale vogel. Komt vroeg uit West-Afrika en vertrekt al midden in de zomer."},
+  {naam:"Ooievaar", latijn:"Ciconia ciconia", soort:"zomer", komt:[2,3], gaat:[8], tip:"Een deel blijft tegenwoordig 's winters hier."},
+  {naam:"Tjiftjaf", latijn:"Phylloscopus collybita", soort:"zomer", komt:[3], gaat:[9,10], tip:"Roept zijn eigen naam. Vaak de eerste zanger van het voorjaar."},
+  {naam:"Zwartkop", latijn:"Sylvia atricapilla", soort:"zomer", komt:[3,4], gaat:[9,10], tip:"Mannetje heeft een zwart petje, vrouwtje een bruin."},
+  {naam:"Bruine kiekendief", latijn:"Circus aeruginosus", soort:"zomer", komt:[3,4], gaat:[8,9], tip:"Zweeft laag boven rietvelden met de vleugels in een V."},
+  {naam:"Tapuit", latijn:"Oenanthe oenanthe", soort:"zomer", komt:[3,4], gaat:[9], tip:"Vooral doortrekker; let op de witte stuit als hij wegvliegt."},
+  {naam:"Boerenzwaluw", latijn:"Hirundo rustica", soort:"zomer", komt:[4], gaat:[9,10], tip:"Lange staartpennen, nestelt in stallen."},
+  {naam:"Fitis", latijn:"Phylloscopus trochilus", soort:"zomer", komt:[4], gaat:[8,9], tip:"Lijkt op de tjiftjaf, maar zingt een dalend liedje."},
+  {naam:"Gele kwikstaart", latijn:"Motacilla flava", soort:"zomer", komt:[4], gaat:[8,9], tip:"Felgeel, vaak tussen grazend vee."},
+  {naam:"Visdief", latijn:"Sterna hirundo", soort:"zomer", komt:[4], gaat:[8,9], tip:"Stoot met een plons in het water op visjes."},
+  {naam:"Nachtegaal", latijn:"Luscinia megarhynchos", soort:"zomer", komt:[4], gaat:[8], tip:"Zingt ook 's nachts, verstopt in struiken."},
+  {naam:"Grasmus", latijn:"Curruca communis", soort:"zomer", komt:[4], gaat:[8,9], tip:"Doet een zangvluchtje boven braamstruiken."},
+  {naam:"Huiszwaluw", latijn:"Delichon urbicum", soort:"zomer", komt:[4,5], gaat:[9], tip:"Witte stuit, bouwt modderen nestjes onder dakgoten."},
+  {naam:"Kleine karekiet", latijn:"Acrocephalus scirpaceus", soort:"zomer", komt:[4,5], gaat:[8,9], tip:"Krast eindeloos in het riet."},
+  {naam:"Boomvalk", latijn:"Falco subbuteo", soort:"zomer", komt:[4,5], gaat:[9], tip:"Vangt libellen en zwaluwen in de vlucht."},
+  {naam:"Koekoek", latijn:"Cuculus canorus", soort:"zomer", komt:[4,5], gaat:[7,8], tip:"Volwassenen vertrekken al in juli, de jongen later."},
+  {naam:"Gierzwaluw", latijn:"Apus apus", soort:"zomer", komt:[5], gaat:[7,8], tip:"Komt als een van de laatsten en is als eerste weer weg."},
+  {naam:"Wielewaal", latijn:"Oriolus oriolus", soort:"zomer", komt:[5], gaat:[8], tip:"Fluit als een flesje, maar is lastig te zien."},
+  // --- wintergasten ---
+  {naam:"Smient", latijn:"Mareca penelope", soort:"winter", komt:[9,10], gaat:[3,4], tip:"Fluitend 'wie-oe' van grote groepen in natte weilanden."},
+  {naam:"Pijlstaart", latijn:"Anas acuta", soort:"winter", komt:[9,10], gaat:[3,4], tip:"Elegante eend met een lange spitse staart."},
+  {naam:"Kolgans", latijn:"Anser albifrons", soort:"winter", komt:[10], gaat:[3], tip:"Witte bles boven de snavel. Vliegt in V-formatie."},
+  {naam:"Toendrarietgans", latijn:"Anser serrirostris", soort:"winter", komt:[10], gaat:[3], tip:"Donkere kop, oranje pootjes."},
+  {naam:"Brandgans", latijn:"Branta leucopsis", soort:"winter", komt:[10], gaat:[4], tip:"Zwart-wit. Een deel broedt inmiddels ook hier."},
+  {naam:"Kramsvogel", latijn:"Turdus pilaris", soort:"winter", komt:[10], gaat:[3,4], tip:"Lijster met grijze kop, zit in bessenstruiken."},
+  {naam:"Koperwiek", latijn:"Turdus iliacus", soort:"winter", komt:[10], gaat:[3,4], tip:"Roestrode flank. 's Nachts hoor je ze overvliegen: 'tsiep'."},
+  {naam:"Keep", latijn:"Fringilla montifringilla", soort:"winter", komt:[10], gaat:[4], tip:"Familie van de vink, met oranje borst."},
+  {naam:"Kleine zwaan", latijn:"Cygnus columbianus", soort:"winter", komt:[10,11], gaat:[3], tip:"Kleiner dan de knobbelzwaan, gele snavelbasis."},
+  {naam:"Wilde zwaan", latijn:"Cygnus cygnus", soort:"winter", komt:[11], gaat:[3], tip:"Grote gele vlek op de snavel."}
+];
+
+const MAANDNAMEN = ["jan","feb","mrt","apr","mei","jun","jul","aug","sep","okt","nov","dec"];
+const VOLLEDIG = ["januari","februari","maart","april","mei","juni","juli","augustus","september","oktober","november","december"];
+
+/* =========================================================
+   STAP 3: HET REKENWERK
+   Voor elke maand bepalen we wat de vogel doet.
+   ========================================================= */
+function status(vogel, maand){
+  if (vogel.komt.includes(maand)) return "komt";
+  if (vogel.gaat.includes(maand)) return "gaat";
+  // Tel vanaf de aankomst door tot het vertrek (ook over de jaarwisseling heen)
+  let m = vogel.komt[0];
+  const einde = vogel.gaat[vogel.gaat.length - 1];
+  while (m !== einde){
+    if (m === maand) return "hier";
+    m = m % 12 + 1;
+  }
+  return "weg";
+}
+
+/* =========================================================
+   STAP 4: OP HET SCHERM ZETTEN
+   ========================================================= */
+let gekozen = new Date().getMonth() + 1; // de maand van vandaag
+let FOTOS = {};                            // hier komen de foto's in
+
+/* =========================================================
+   STAP 5: FOTO'S HALEN BIJ WIKIPEDIA
+   We vragen Wikipedia in één keer: "geef me de hoofdfoto
+   bij al deze Latijnse namen". Daarna vragen we Wikimedia
+   Commons wie de foto gemaakt heeft, zodat we die netjes
+   kunnen noemen. Het resultaat bewaren we op je telefoon,
+   zodat het de volgende keer meteen klaar staat.
+   ========================================================= */
+const FOTO_GEHEUGEN = "trekvogels-fotos-v1";
+
+function tekst(html){ const d = document.createElement("div"); d.innerHTML = html || ""; return d.textContent.trim(); }
+function veilig(t){ return String(t).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+async function haalFotos(){
+  let geheugen = {};
+  try { geheugen = JSON.parse(localStorage.getItem(FOTO_GEHEUGEN)) || {}; } catch(e){}
+  if (VOGELS.every(v => geheugen[v.latijn])) return geheugen;
+
+  // Vraag 1: welke foto hoort bij elke vogel?
+  const titels = VOGELS.map(v => v.latijn).join("|");
+  const url1 = "https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&redirects=1"
+             + "&prop=pageimages&piprop=thumbnail|name&pithumbsize=600&titles=" + encodeURIComponent(titels);
+  const q = (await (await fetch(url1)).json()).query;
+
+  const doorsturen = {};
+  (q.normalized || []).forEach(n => doorsturen[n.from] = n.to);
+  (q.redirects  || []).forEach(n => doorsturen[n.from] = n.to);
+  const paginas = {};
+  Object.values(q.pages).forEach(p => paginas[p.title] = p);
+
+  const bestanden = [];
+  VOGELS.forEach(v => {
+    let t = v.latijn;
+    for (let i = 0; i < 3 && doorsturen[t]; i++) t = doorsturen[t];
+    const p = paginas[t];
+    if (p && p.thumbnail && p.pageimage){
+      geheugen[v.latijn] = { src: p.thumbnail.source, bestand: p.pageimage, maker: "", licentie: "" };
+      bestanden.push("File:" + p.pageimage);
+    }
+  });
+
+  // Vraag 2: wie maakte de foto en onder welke licentie?
+  if (bestanden.length){
+    const url2 = "https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*"
+               + "&prop=imageinfo&iiprop=extmetadata&titles=" + encodeURIComponent(bestanden.join("|"));
+    const r2 = (await (await fetch(url2)).json()).query;
+    const info = {};
+    Object.values(r2.pages).forEach(p => {
+      const m = p.imageinfo && p.imageinfo[0].extmetadata;
+      if (m) info[p.title.replace(/^File:/, "").replace(/_/g, " ")] = {
+        maker: tekst(m.Artist && m.Artist.value),
+        licentie: (m.LicenseShortName && m.LicenseShortName.value) || ""
+      };
+    });
+    Object.values(geheugen).forEach(f => {
+      const i = info[f.bestand.replace(/_/g, " ")];
+      if (i){ f.maker = i.maker; f.licentie = i.licentie; }
+    });
+  }
+
+  try { localStorage.setItem(FOTO_GEHEUGEN, JSON.stringify(geheugen)); } catch(e){}
+  return geheugen;
+}
+
+function tekenMaanden(){
+  const doos = document.getElementById("maanden");
+  doos.innerHTML = MAANDNAMEN.map((n,i) =>
+    `<button aria-pressed="${i+1===gekozen}" data-m="${i+1}">${n}</button>`).join("");
+  doos.querySelectorAll("button").forEach(b =>
+    b.onclick = () => { gekozen = +b.dataset.m; tekenAlles(); });
+}
+
+function vogelKaart(v){
+  const balk = MAANDNAMEN.map((_,i) => {
+    const s = status(v, i+1);
+    return `<i class="${s}${i+1===gekozen?' nu':''}"></i>`;
+  }).join("");
+  const f = FOTOS[v.latijn];
+  const klein = f
+    ? `<img class="foto" src="${f.src}" alt="" loading="lazy">`
+    : `<span class="foto" aria-hidden="true">${v.naam[0]}</span>`;
+  const groot = f
+    ? `<img class="groot" src="${f.src}" alt="Foto van een ${v.naam.toLowerCase()}" loading="lazy">
+       <small class="bron">Foto: ${veilig(f.maker || "onbekend")}${f.licentie ? ", " + veilig(f.licentie) : ""},
+       <a href="https://commons.wikimedia.org/wiki/File:${encodeURIComponent(f.bestand)}" target="_blank" rel="noopener">Wikimedia Commons</a></small>`
+    : "";
+  return `<details class="vogel"><summary>
+      ${klein}
+      <span class="naam">${v.naam}</span>
+      <span class="soort">${v.soort==="zomer"?"zomergast":"wintergast"}</span>
+      <span class="latijn">${v.latijn}</span>
+      <span class="jaar" aria-hidden="true">${balk}</span>
+    </summary><p class="uitleg">${v.tip}</p>${groot}</details>`;
+}
+
+function groep(titel, vogels){
+  const inhoud = vogels.length
+    ? vogels.map(vogelKaart).join("")
+    : `<p class="leeg">Geen soorten in deze maand.</p>`;
+  return `<h2>${titel} <small>${vogels.length}</small></h2>${inhoud}`;
+}
+
+function tekenAlles(){
+  tekenMaanden();
+  const vandaag = new Date().getMonth() + 1;
+  document.getElementById("sub").textContent =
+    gekozen === vandaag ? `Wat er in ${VOLLEDIG[gekozen-1]} gebeurt in Nederland.`
+                        : `Je kijkt naar ${VOLLEDIG[gekozen-1]}.`;
+  const per = s => VOGELS.filter(v => status(v, gekozen) === s);
+  document.getElementById("lijst").innerHTML =
+    groep("Komen nu aan", per("komt")) +
+    groep("Vertrekken nu", per("gaat")) +
+    groep("Zijn er nu", per("hier"));
+}
+
+tekenAlles();                                   // eerst zonder foto's
+haalFotos()
+  .then(f => { FOTOS = f; tekenAlles(); })      // dan opnieuw, mét foto's
+  .catch(() => {});                             // geen internet? dan zonder foto's
+</script>
+</body>
+</html>

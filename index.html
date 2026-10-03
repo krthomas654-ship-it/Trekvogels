@@ -14,17 +14,17 @@
 /* ===== KLEUREN (stap 1: hier kun je de kleuren aanpassen) ===== */
 :root{
   --lucht:#E3E9EA; --veen:#24332A; --riet:#B8902F; --water:#3F6E7E;
-  --blad:#FBFCFA; --mist:#9AA8A3; --leeg:#D3DCDA;
+  --blad:#FBFCFA; --mist:#9AA8A3; --leeg:#D3DCDA; --door:#7E9A6B;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --lucht:#18211C; --veen:#E6ECE8; --riet:#D9B04E; --water:#7FB2C2;
-    --blad:#202B25; --mist:#6E7D77; --leeg:#2F3B35;
+    --blad:#202B25; --mist:#6E7D77; --leeg:#2F3B35; --door:#97B583;
   }
 }
 :root[data-theme="dark"]{
   --lucht:#18211C; --veen:#E6ECE8; --riet:#D9B04E; --water:#7FB2C2;
-  --blad:#202B25; --mist:#6E7D77; --leeg:#2F3B35;
+  --blad:#202B25; --mist:#6E7D77; --leeg:#2F3B35; --door:#97B583;
 }
 :root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
@@ -62,6 +62,14 @@ h2 small{font-weight:500;color:var(--mist);font-size:.9rem}
 .jaar i.hier{background:var(--mist)}
 .jaar i.komt{background:var(--riet)}
 .jaar i.gaat{background:var(--water)}
+.jaar i.door{background:var(--door)}
+.route{padding:0 .9rem .6rem;margin:0;font-size:.9rem}
+.route b{font-weight:600}
+.zoek{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:.5rem}
+.zoek input{flex:1 1 100%;font:inherit;padding:.65rem .8rem;border-radius:8px;border:1px solid var(--leeg);background:var(--blad);color:var(--veen)}
+.zoek button{font:500 .85rem "Bricolage Grotesque",sans-serif;padding:.45rem .8rem;border-radius:999px;border:1px solid var(--leeg);background:transparent;color:var(--veen);cursor:pointer}
+.zoek button[aria-pressed="true"]{background:var(--veen);color:var(--lucht);border-color:var(--veen)}
+.zoek input:focus-visible,.zoek button:focus-visible{outline:2px solid var(--water);outline-offset:2px}
 .jaar i.nu{outline:2px solid var(--veen);outline-offset:1px}
 .uitleg{padding:0 .9rem .6rem;margin:0;font-size:.92rem}
 .leeg{color:var(--mist);font-style:italic}
@@ -78,11 +86,20 @@ footer{margin-top:3rem;font-size:.8rem;color:var(--mist)}
     <span style="--k:var(--riet)">komt aan</span>
     <span style="--k:var(--mist)">is hier</span>
     <span style="--k:var(--water)">vertrekt</span>
+    <span style="--k:var(--door)">trekt door</span>
+  </div>
+
+  <div class="zoek">
+    <input id="zoekveld" type="search" placeholder="Zoek een vogel" aria-label="Zoek een vogel">
+    <button data-f="alle" aria-pressed="true">Alle</button>
+    <button data-f="zomer" aria-pressed="false">Zomergasten</button>
+    <button data-f="winter" aria-pressed="false">Wintergasten</button>
+    <button data-f="door" aria-pressed="false">Doortrekkers</button>
   </div>
 
   <div id="lijst"></div>
 
-  <footer>Versie 3. Foto's via Wikipedia en Wikimedia Commons. Maanden zijn gemiddelden voor Nederland; per jaar en per plek kan het een paar weken schuiven.</footer>
+  <footer>Versie 4. Regelmatige trekvogels van Friesland. Foto's via Wikipedia en Wikimedia Commons. Maanden zijn gemiddelden voor Nederland; per jaar en per plek kan het een paar weken schuiven.</footer>
 </main>
 
 <script>
@@ -98,36 +115,110 @@ footer{margin-top:3rem;font-size:.8rem;color:var(--mist)}
    Wil je een vogel toevoegen? Kopieer een regel en pas hem aan.
    ========================================================= */
 const VOGELS = [
-  // --- zomergasten ---
-  {naam:"Grutto", latijn:"Limosa limosa", soort:"zomer", komt:[2,3], gaat:[6,7], tip:"Onze nationale vogel. Komt vroeg uit West-Afrika en vertrekt al midden in de zomer."},
-  {naam:"Ooievaar", latijn:"Ciconia ciconia", soort:"zomer", komt:[2,3], gaat:[8], tip:"Een deel blijft tegenwoordig 's winters hier."},
-  {naam:"Tjiftjaf", latijn:"Phylloscopus collybita", soort:"zomer", komt:[3], gaat:[9,10], tip:"Roept zijn eigen naam. Vaak de eerste zanger van het voorjaar."},
-  {naam:"Zwartkop", latijn:"Sylvia atricapilla", soort:"zomer", komt:[3,4], gaat:[9,10], tip:"Mannetje heeft een zwart petje, vrouwtje een bruin."},
-  {naam:"Bruine kiekendief", latijn:"Circus aeruginosus", soort:"zomer", komt:[3,4], gaat:[8,9], tip:"Zweeft laag boven rietvelden met de vleugels in een V."},
-  {naam:"Tapuit", latijn:"Oenanthe oenanthe", soort:"zomer", komt:[3,4], gaat:[9], tip:"Vooral doortrekker; let op de witte stuit als hij wegvliegt."},
-  {naam:"Boerenzwaluw", latijn:"Hirundo rustica", soort:"zomer", komt:[4], gaat:[9,10], tip:"Lange staartpennen, nestelt in stallen."},
-  {naam:"Fitis", latijn:"Phylloscopus trochilus", soort:"zomer", komt:[4], gaat:[8,9], tip:"Lijkt op de tjiftjaf, maar zingt een dalend liedje."},
-  {naam:"Gele kwikstaart", latijn:"Motacilla flava", soort:"zomer", komt:[4], gaat:[8,9], tip:"Felgeel, vaak tussen grazend vee."},
-  {naam:"Visdief", latijn:"Sterna hirundo", soort:"zomer", komt:[4], gaat:[8,9], tip:"Stoot met een plons in het water op visjes."},
-  {naam:"Nachtegaal", latijn:"Luscinia megarhynchos", soort:"zomer", komt:[4], gaat:[8], tip:"Zingt ook 's nachts, verstopt in struiken."},
-  {naam:"Grasmus", latijn:"Curruca communis", soort:"zomer", komt:[4], gaat:[8,9], tip:"Doet een zangvluchtje boven braamstruiken."},
-  {naam:"Huiszwaluw", latijn:"Delichon urbicum", soort:"zomer", komt:[4,5], gaat:[9], tip:"Witte stuit, bouwt modderen nestjes onder dakgoten."},
-  {naam:"Kleine karekiet", latijn:"Acrocephalus scirpaceus", soort:"zomer", komt:[4,5], gaat:[8,9], tip:"Krast eindeloos in het riet."},
-  {naam:"Boomvalk", latijn:"Falco subbuteo", soort:"zomer", komt:[4,5], gaat:[9], tip:"Vangt libellen en zwaluwen in de vlucht."},
-  {naam:"Koekoek", latijn:"Cuculus canorus", soort:"zomer", komt:[4,5], gaat:[7,8], tip:"Volwassenen vertrekken al in juli, de jongen later."},
-  {naam:"Gierzwaluw", latijn:"Apus apus", soort:"zomer", komt:[5], gaat:[7,8], tip:"Komt als een van de laatsten en is als eerste weer weg."},
-  {naam:"Wielewaal", latijn:"Oriolus oriolus", soort:"zomer", komt:[5], gaat:[8], tip:"Fluit als een flesje, maar is lastig te zien."},
-  // --- wintergasten ---
-  {naam:"Smient", latijn:"Mareca penelope", soort:"winter", komt:[9,10], gaat:[3,4], tip:"Fluitend 'wie-oe' van grote groepen in natte weilanden."},
-  {naam:"Pijlstaart", latijn:"Anas acuta", soort:"winter", komt:[9,10], gaat:[3,4], tip:"Elegante eend met een lange spitse staart."},
-  {naam:"Kolgans", latijn:"Anser albifrons", soort:"winter", komt:[10], gaat:[3], tip:"Witte bles boven de snavel. Vliegt in V-formatie."},
-  {naam:"Toendrarietgans", latijn:"Anser serrirostris", soort:"winter", komt:[10], gaat:[3], tip:"Donkere kop, oranje pootjes."},
-  {naam:"Brandgans", latijn:"Branta leucopsis", soort:"winter", komt:[10], gaat:[4], tip:"Zwart-wit. Een deel broedt inmiddels ook hier."},
-  {naam:"Kramsvogel", latijn:"Turdus pilaris", soort:"winter", komt:[10], gaat:[3,4], tip:"Lijster met grijze kop, zit in bessenstruiken."},
-  {naam:"Koperwiek", latijn:"Turdus iliacus", soort:"winter", komt:[10], gaat:[3,4], tip:"Roestrode flank. 's Nachts hoor je ze overvliegen: 'tsiep'."},
-  {naam:"Keep", latijn:"Fringilla montifringilla", soort:"winter", komt:[10], gaat:[4], tip:"Familie van de vink, met oranje borst."},
-  {naam:"Kleine zwaan", latijn:"Cygnus columbianus", soort:"winter", komt:[10,11], gaat:[3], tip:"Kleiner dan de knobbelzwaan, gele snavelbasis."},
-  {naam:"Wilde zwaan", latijn:"Cygnus cygnus", soort:"winter", komt:[11], gaat:[3], tip:"Grote gele vlek op de snavel."}
+  // ================= ZOMERGASTEN (route = waar ze overwinteren) =================
+  {naam:"Grutto", latijn:"Limosa limosa", soort:"zomer", komt:[2,3], gaat:[6,7], route:"West-Afrika (Senegal, Guinee-Bissau) en Spanje en Portugal", tip:"Onze nationale vogel. Friesland is zijn belangrijkste broedgebied ter wereld."},
+  {naam:"Kievit", latijn:"Vanellus vanellus", soort:"zomer", komt:[2,3], gaat:[10,11], route:"Frankrijk, Spanje en Engeland; een deel blijft hier", tip:"Tuimelt in het voorjaar door de lucht met een 'kie-wiet'."},
+  {naam:"Ooievaar", latijn:"Ciconia ciconia", soort:"zomer", komt:[2,3], gaat:[8], route:"Spanje, Marokko en de Sahel in West-Afrika", tip:"Een deel blijft tegenwoordig 's winters hier."},
+  {naam:"Tureluur", latijn:"Tringa totanus", soort:"zomer", komt:[3], gaat:[7,8], route:"Kusten van West-Europa tot West-Afrika", tip:"Rode poten en een nerveus 'tjuu-huu' als je te dichtbij komt."},
+  {naam:"Kluut", latijn:"Recurvirostra avosetta", soort:"zomer", komt:[3], gaat:[9,10], route:"Frankrijk, Spanje, Portugal en West-Afrika", tip:"Zwart-wit met een omhooggebogen snavel waarmee hij door het slik maait."},
+  {naam:"Lepelaar", latijn:"Platalea leucorodia", soort:"zomer", komt:[3], gaat:[9,10], route:"Frankrijk, Spanje, Mauritanië (Banc d'Arguin) en Senegal", tip:"Broedt in grote kolonies op de Waddeneilanden."},
+  {naam:"Tjiftjaf", latijn:"Phylloscopus collybita", soort:"zomer", komt:[3], gaat:[9,10], route:"Spanje, Portugal en Noord-Afrika", tip:"Roept zijn eigen naam. Vaak de eerste zanger van het voorjaar."},
+  {naam:"Roodborsttapuit", latijn:"Saxicola rubicola", soort:"zomer", komt:[3], gaat:[10], route:"Frankrijk en Spanje", tip:"Zit graag bovenop een paaltje of struik."},
+  {naam:"Zwartkop", latijn:"Sylvia atricapilla", soort:"zomer", komt:[3,4], gaat:[9,10], route:"Spanje, Portugal en Noord-Afrika; een deel naar Engeland", tip:"Mannetje heeft een zwart petje, vrouwtje een bruin."},
+  {naam:"Blauwborst", latijn:"Luscinia svecica", soort:"zomer", komt:[3,4], gaat:[8,9], route:"Spanje, Portugal en West-Afrika", tip:"Zingt vanaf rietpluimen langs sloten."},
+  {naam:"Bruine kiekendief", latijn:"Circus aeruginosus", soort:"zomer", komt:[3,4], gaat:[8,9], route:"West-Afrika; een deel blijft in Spanje", tip:"Zweeft laag boven rietvelden met de vleugels in een V."},
+  {naam:"Tapuit", latijn:"Oenanthe oenanthe", soort:"zomer", komt:[3,4], gaat:[9], route:"De Sahel in West-Afrika", tip:"Broedt in de duinen. Groenlandse tapuiten trekken hier ook door."},
+  {naam:"Grote stern", latijn:"Thalasseus sandvicensis", soort:"zomer", komt:[3,4], gaat:[8,9], route:"De kust van West-Afrika", tip:"Zwart kuifje, snavel met een geel puntje."},
+  {naam:"Kleine plevier", latijn:"Charadrius dubius", soort:"zomer", komt:[3,4], gaat:[8,9], route:"West-Afrika", tip:"Gele oogring. Broedt op kale grond, zelfs op bouwterreinen."},
+  {naam:"Zomertaling", latijn:"Spatula querquedula", soort:"zomer", komt:[3,4], gaat:[8,9], route:"De Sahel (Senegal, Mali)", tip:"Het mannetje heeft een witte wenkbrauwstreep."},
+  {naam:"Boerenzwaluw", latijn:"Hirundo rustica", soort:"zomer", komt:[4], gaat:[9,10], route:"Afrika ten zuiden van de evenaar, tot Zuid-Afrika", tip:"Lange staartpennen, nestelt in stallen."},
+  {naam:"Oeverzwaluw", latijn:"Riparia riparia", soort:"zomer", komt:[4], gaat:[8,9], route:"De Sahel in West-Afrika", tip:"Graaft nestgangen in steile zandwanden."},
+  {naam:"Fitis", latijn:"Phylloscopus trochilus", soort:"zomer", komt:[4], gaat:[8,9], route:"West- en Centraal-Afrika tot Zuid-Afrika", tip:"Lijkt op de tjiftjaf, maar zingt een dalend liedje."},
+  {naam:"Gele kwikstaart", latijn:"Motacilla flava", soort:"zomer", komt:[4], gaat:[8,9], route:"West-Afrika ten zuiden van de Sahara", tip:"Felgeel, vaak tussen grazend vee."},
+  {naam:"Grasmus", latijn:"Curruca communis", soort:"zomer", komt:[4], gaat:[8,9], route:"De Sahel in West-Afrika", tip:"Doet een zangvluchtje boven braamstruiken."},
+  {naam:"Braamsluiper", latijn:"Curruca curruca", soort:"zomer", komt:[4], gaat:[8,9], route:"Oost-Afrika (Soedan, Ethiopië), via het oosten van de Middellandse Zee", tip:"Trekt om de Middellandse Zee heen in plaats van eroverheen."},
+  {naam:"Nachtegaal", latijn:"Luscinia megarhynchos", soort:"zomer", komt:[4], gaat:[8], route:"West-Afrika", tip:"Zingt ook 's nachts, verstopt in struiken."},
+  {naam:"Rietzanger", latijn:"Acrocephalus schoenobaenus", soort:"zomer", komt:[4], gaat:[8,9], route:"West-Afrika ten zuiden van de Sahara", tip:"Zingt druk en rommelig, met een lichte wenkbrauwstreep."},
+  {naam:"Sprinkhaanzanger", latijn:"Locustella naevia", soort:"zomer", komt:[4], gaat:[8,9], route:"West-Afrika", tip:"Klinkt als een tikkende sprinkhaan of een fietswieltje."},
+  {naam:"Snor", latijn:"Locustella luscinioides", soort:"zomer", komt:[4], gaat:[8], route:"De Sahel in West-Afrika", tip:"Snort als een naaimachine in grote rietvelden."},
+  {naam:"Bonte vliegenvanger", latijn:"Ficedula hypoleuca", soort:"zomer", komt:[4], gaat:[8,9], route:"West-Afrika", tip:"Mannetje zwart-wit, broedt in nestkasten."},
+  {naam:"Gekraagde roodstaart", latijn:"Phoenicurus phoenicurus", soort:"zomer", komt:[4], gaat:[8,9], route:"De Sahel in West-Afrika", tip:"Trilt steeds met zijn oranjerode staart."},
+  {naam:"Boompieper", latijn:"Anthus trivialis", soort:"zomer", komt:[4], gaat:[8,9], route:"West-Afrika", tip:"Laat zich zingend als een parachuutje naar beneden zakken."},
+  {naam:"Visdief", latijn:"Sterna hirundo", soort:"zomer", komt:[4], gaat:[8,9], route:"De kust van West-Afrika tot Zuid-Afrika", tip:"Stoot met een plons in het water op visjes."},
+  {naam:"Porseleinhoen", latijn:"Porzana porzana", soort:"zomer", komt:[4], gaat:[9], route:"Afrika", tip:"Je hoort hem 's nachts: een herhaald 'hoeit', als een zweepje."},
+  {naam:"Huiszwaluw", latijn:"Delichon urbicum", soort:"zomer", komt:[4,5], gaat:[9], route:"Tropisch Afrika", tip:"Witte stuit, bouwt modderen nestjes onder dakgoten."},
+  {naam:"Tuinfluiter", latijn:"Sylvia borin", soort:"zomer", komt:[4,5], gaat:[8,9], route:"Tropisch Afrika", tip:"Grijsbruin en onopvallend, maar zingt prachtig."},
+  {naam:"Kleine karekiet", latijn:"Acrocephalus scirpaceus", soort:"zomer", komt:[4,5], gaat:[8,9], route:"West-Afrika", tip:"Krast eindeloos in het riet."},
+  {naam:"Paapje", latijn:"Saxicola rubetra", soort:"zomer", komt:[4,5], gaat:[8,9], route:"West-Afrika", tip:"Bloemrijke graslanden; zeldzaam geworden."},
+  {naam:"Boomvalk", latijn:"Falco subbuteo", soort:"zomer", komt:[4,5], gaat:[9], route:"Zuidelijk Afrika", tip:"Vangt libellen en zwaluwen in de vlucht."},
+  {naam:"Koekoek", latijn:"Cuculus canorus", soort:"zomer", komt:[4,5], gaat:[7,8], route:"Centraal-Afrika (Congobekken)", tip:"Volwassenen vertrekken al in juli, de jongen later en helemaal alleen."},
+  {naam:"Noordse stern", latijn:"Sterna paradisaea", soort:"zomer", komt:[4,5], gaat:[8], route:"De kust van Antarctica", tip:"De verste trekker ter wereld: tienduizenden kilometers per jaar."},
+  {naam:"Dwergstern", latijn:"Sternula albifrons", soort:"zomer", komt:[4,5], gaat:[8], route:"De kust van West-Afrika", tip:"Kleinste stern, gele snavel. Broedt op kale zandplaten."},
+  {naam:"Zwarte stern", latijn:"Chlidonias niger", soort:"zomer", komt:[4,5], gaat:[8,9], route:"De kust van West-Afrika", tip:"Broedt op drijvende plantjes in laagveenmoerassen."},
+  {naam:"Gierzwaluw", latijn:"Apus apus", soort:"zomer", komt:[5], gaat:[7,8], route:"Centraal- en zuidelijk Afrika", tip:"Komt als een van de laatsten en is als eerste weer weg."},
+  {naam:"Bosrietzanger", latijn:"Acrocephalus palustris", soort:"zomer", komt:[5], gaat:[8], route:"Zuidoostelijk Afrika, via Oost-Afrika", tip:"Een meester-imitator: bootst tientallen Afrikaanse vogels na."},
+  {naam:"Grote karekiet", latijn:"Acrocephalus arundinaceus", soort:"zomer", komt:[5], gaat:[8], route:"Tropisch Afrika", tip:"Luid 'karre-karre-kiet' uit dik riet."},
+  {naam:"Spotvogel", latijn:"Hippolais icterina", soort:"zomer", komt:[5], gaat:[8], route:"Zuidelijk Afrika", tip:"Geelachtig, zingt een snelle mix van geluiden."},
+  {naam:"Grauwe vliegenvanger", latijn:"Muscicapa striata", soort:"zomer", komt:[5], gaat:[8,9], route:"Zuidelijk Afrika", tip:"Vliegt vanaf een vaste tak op insecten af en keert terug."},
+  {naam:"Wielewaal", latijn:"Oriolus oriolus", soort:"zomer", komt:[5], gaat:[8], route:"Oost- en zuidelijk Afrika", tip:"Fluit als een flesje, maar is lastig te zien."},
+  {naam:"Zomertortel", latijn:"Streptopelia turtur", soort:"zomer", komt:[5], gaat:[8], route:"De Sahel (Senegal, Mali)", tip:"Snort zacht 'toerr-toerr'. Sterk achteruitgegaan."},
+  {naam:"Kwartelkoning", latijn:"Crex crex", soort:"zomer", komt:[5], gaat:[8,9], route:"Zuidoostelijk Afrika", tip:"Raspt 's nachts 'crex crex' uit hooilanden."},
+  {naam:"Kwartel", latijn:"Coturnix coturnix", soort:"zomer", komt:[5], gaat:[9], route:"De Sahel in Afrika", tip:"Roept 'kwik-me-dit' vanuit graanvelden."},
+
+  // ================= WINTERGASTEN (route = waar ze broeden) =================
+  {naam:"Wulp", latijn:"Numenius arquata", soort:"winter", komt:[7,8], gaat:[3,4], route:"Finland, Zweden en Rusland; een deel broedt ook hier", tip:"Lange kromme snavel. Zijn roep klinkt als zijn naam."},
+  {naam:"Steenloper", latijn:"Arenaria interpres", soort:"winter", komt:[8], gaat:[4,5], route:"Groenland, Noordoost-Canada en Scandinavië", tip:"Draait op de dijk steentjes en wier om."},
+  {naam:"Bonte strandloper", latijn:"Calidris alpina", soort:"winter", komt:[8,9], gaat:[4,5], route:"Noord-Scandinavië, Noord-Rusland en Siberië", tip:"De talrijkste steltloper van het wad."},
+  {naam:"Kanoet", latijn:"Calidris canutus", soort:"winter", komt:[8,9], gaat:[4,5], route:"Groenland en Noordoost-Canada; Siberische kanoeten trekken door", tip:"Vliegt in enorme zwermen die als rook van kleur wisselen."},
+  {naam:"Drieteenstrandloper", latijn:"Calidris alba", soort:"winter", komt:[8,9], gaat:[4,5], route:"Groenland en Siberië", tip:"Rent als een opwindspeeltje langs de vloedlijn."},
+  {naam:"Zilverplevier", latijn:"Pluvialis squatarola", soort:"winter", komt:[8,9], gaat:[4,5], route:"De toendra van Noord-Rusland en Siberië", tip:"Zwarte 'oksels' als hij vliegt."},
+  {naam:"Rosse grutto", latijn:"Limosa lapponica", soort:"winter", komt:[8,9], gaat:[4,5], route:"Noord-Scandinavië en Siberië; een deel trekt door naar West-Afrika", tip:"Wadvogel met een licht omhooggebogen snavel."},
+  {naam:"Smient", latijn:"Mareca penelope", soort:"winter", komt:[9,10], gaat:[3,4], route:"Noord-Rusland, Scandinavië en Siberië", tip:"Fluitend 'wie-oe' van grote groepen in natte weilanden."},
+  {naam:"Pijlstaart", latijn:"Anas acuta", soort:"winter", komt:[9,10], gaat:[3,4], route:"Noord-Rusland en Scandinavië", tip:"Elegante eend met een lange spitse staart."},
+  {naam:"Wintertaling", latijn:"Anas crecca", soort:"winter", komt:[9,10], gaat:[3,4], route:"Scandinavië en Rusland", tip:"Kleinste eend; het mannetje heeft een groen oogmasker."},
+  {naam:"Goudplevier", latijn:"Pluvialis apricaria", soort:"winter", komt:[9,10], gaat:[3,4], route:"Scandinavië en Noord-Rusland", tip:"Grote groepen op Friese weilanden, met een weemoedig 'tuu'."},
+  {naam:"Kolgans", latijn:"Anser albifrons", soort:"winter", komt:[10], gaat:[3], route:"De Siberische toendra en Noord-Rusland", tip:"Witte bles boven de snavel. Vliegt in V-formatie."},
+  {naam:"Toendrarietgans", latijn:"Anser serrirostris", soort:"winter", komt:[10], gaat:[3], route:"Noord-Rusland en Siberië", tip:"Donkere kop, oranje pootjes."},
+  {naam:"Kleine rietgans", latijn:"Anser brachyrhynchus", soort:"winter", komt:[10], gaat:[3], route:"Spitsbergen", tip:"Roze pootjes en een korte snavel."},
+  {naam:"Brandgans", latijn:"Branta leucopsis", soort:"winter", komt:[10], gaat:[4], route:"Noord-Rusland, Nova Zembla en de Oostzee; een deel broedt hier", tip:"Zwart-wit, kakelt als een groep keffende hondjes."},
+  {naam:"Rotgans", latijn:"Branta bernicla", soort:"winter", komt:[10], gaat:[4,5], route:"Taimyr in Noord-Siberië", tip:"Kleine donkere gans van de kwelders en het wad."},
+  {naam:"Tafeleend", latijn:"Aythya ferina", soort:"winter", komt:[10], gaat:[3], route:"Oost-Europa en Rusland", tip:"Roestbruine kop, rood oog."},
+  {naam:"Kuifeend", latijn:"Aythya fuligula", soort:"winter", komt:[10], gaat:[3,4], route:"Scandinavië en Rusland; een deel broedt hier", tip:"Zwart-wit met een kuifje achterop."},
+  {naam:"Zwarte zee-eend", latijn:"Melanitta nigra", soort:"winter", komt:[10], gaat:[4], route:"Scandinavië en Noord-Rusland", tip:"Zit in grote groepen op zee voor de kust."},
+  {naam:"Kramsvogel", latijn:"Turdus pilaris", soort:"winter", komt:[10], gaat:[3,4], route:"Scandinavië, Finland en Rusland", tip:"Lijster met grijze kop, zit in bessenstruiken."},
+  {naam:"Koperwiek", latijn:"Turdus iliacus", soort:"winter", komt:[10], gaat:[3,4], route:"Scandinavië, Finland en Rusland", tip:"Roestrode flank. 's Nachts hoor je ze overvliegen: 'tsiep'."},
+  {naam:"Keep", latijn:"Fringilla montifringilla", soort:"winter", komt:[10], gaat:[4], route:"De taiga van Scandinavië, Finland en Rusland", tip:"Familie van de vink, met oranje borst."},
+  {naam:"Sijs", latijn:"Spinus spinus", soort:"winter", komt:[10], gaat:[4], route:"Scandinavië en Rusland", tip:"Klein geelgroen vinkje in elzen en berken."},
+  {naam:"Strandleeuwerik", latijn:"Eremophila alpestris", soort:"winter", komt:[10], gaat:[3], route:"Noord-Scandinavië en Noord-Rusland", tip:"Geel-zwart gezichtje, op kwelders en strand."},
+  {naam:"Blauwe kiekendief", latijn:"Circus cyaneus", soort:"winter", komt:[10], gaat:[3,4], route:"Scandinavië en Rusland; enkele broeden op de Waddeneilanden", tip:"Mannetje lichtgrijs met zwarte vleugelpunten."},
+  {naam:"Klapekster", latijn:"Lanius excubitor", soort:"winter", komt:[10], gaat:[3], route:"Scandinavië", tip:"Spietst prooien op doorns als voorraadkast."},
+  {naam:"Kleine zwaan", latijn:"Cygnus columbianus", soort:"winter", komt:[10,11], gaat:[3], route:"De toendra van Noord-Rusland", tip:"Kleiner dan de knobbelzwaan, gele snavelbasis."},
+  {naam:"Brilduiker", latijn:"Bucephala clangula", soort:"winter", komt:[10,11], gaat:[3,4], route:"Scandinavië, Finland en Rusland", tip:"Mannetje heeft een witte vlek tussen oog en snavel."},
+  {naam:"Ruigpootbuizerd", latijn:"Buteo lagopus", soort:"winter", komt:[10,11], gaat:[3,4], route:"Noord-Scandinavië en Noord-Rusland", tip:"Bidt als een torenvalk boven open land."},
+  {naam:"Sneeuwgors", latijn:"Plectrophenax nivalis", soort:"winter", komt:[10,11], gaat:[3], route:"Scandinavië, Groenland en IJsland", tip:"Wit flitsende vleugels op de kwelders langs de Waddenkust."},
+  {naam:"Frater", latijn:"Linaria flavirostris", soort:"winter", komt:[10,11], gaat:[3], route:"Het fjellgebied van Noorwegen", tip:"Lijkt op een kneu, eet zaden op kwelders."},
+  {naam:"Roodkeelduiker", latijn:"Gavia stellata", soort:"winter", komt:[10,11], gaat:[3,4], route:"Scandinavië, Schotland en Noord-Rusland", tip:"Zit op zee voor de kust en duikt naar vis."},
+  {naam:"Wilde zwaan", latijn:"Cygnus cygnus", soort:"winter", komt:[11], gaat:[3], route:"Scandinavië, Finland en Rusland", tip:"Grote gele vlek op de snavel."},
+  {naam:"Toppereend", latijn:"Aythya marila", soort:"winter", komt:[11], gaat:[3], route:"Scandinavië, Noord-Rusland en IJsland", tip:"Grote groepen op het IJsselmeer."},
+  {naam:"Grote zaagbek", latijn:"Mergus merganser", soort:"winter", komt:[11], gaat:[3], route:"Scandinavië", tip:"Lange rode snavel met zaagtandjes om vis vast te houden."},
+  {naam:"Barmsijs", latijn:"Acanthis flammea", soort:"winter", komt:[11], gaat:[3], route:"Scandinavië", tip:"Rood petje en een zwart kinnetje."},
+  {naam:"Nonnetje", latijn:"Mergellus albellus", soort:"winter", komt:[11,12], gaat:[3], route:"De taiga van Noord-Scandinavië en Rusland", tip:"Het mannetje is spierwit met een zwart 'maskertje'."},
+
+  // ================= DOORTREKKERS (route = van waar naar waar) =================
+  {naam:"Kemphaan", latijn:"Calidris pugnax", soort:"door", voorjaar:[3,4], najaar:[7,8,9], route:"Van West-Afrika (Senegal, Mali) naar Noord-Scandinavië en Rusland", tip:"Friesland is een van de belangrijkste tankstations onderweg."},
+  {naam:"Kraanvogel", latijn:"Grus grus", soort:"door", voorjaar:[3,4], najaar:[10,11], route:"Van Spanje en Frankrijk naar Scandinavië, Duitsland en Polen", tip:"Trompetterend in grote V's hoog in de lucht."},
+  {naam:"Vink (Scandinavisch)", latijn:"Fringilla coelebs", soort:"door", voorjaar:[3,4], najaar:[9,10,11], route:"Van Scandinavië naar Frankrijk en Spanje; onze eigen vinken blijven", tip:"Op een goede oktoberochtend trekken er tienduizenden over."},
+  {naam:"Witgat", latijn:"Tringa ochropus", soort:"door", voorjaar:[3,4], najaar:[7,8], route:"Van Zuid-Europa en Afrika naar Scandinavië", tip:"Donker van boven, felwitte stuit als hij opvliegt."},
+  {naam:"Visarend", latijn:"Pandion haliaetus", soort:"door", voorjaar:[4], najaar:[8,9], route:"Van West-Afrika naar Scandinavië en Schotland", tip:"Duikt met de poten vooruit op vis."},
+  {naam:"Regenwulp", latijn:"Numenius phaeopus", soort:"door", voorjaar:[4,5], najaar:[7,8], route:"Van West-Afrika naar Scandinavië, IJsland en Rusland", tip:"Kleinere wulp met strepen op de kop; giechelt zeven keer."},
+  {naam:"Zwarte ruiter", latijn:"Tringa erythropus", soort:"door", voorjaar:[4,5], najaar:[7,8,9], route:"Van West-Afrika naar Noord-Scandinavië en Rusland", tip:"In het voorjaar roetzwart met witte stippen."},
+  {naam:"Groenpootruiter", latijn:"Tringa nebularia", soort:"door", voorjaar:[4,5], najaar:[7,8,9], route:"Van Afrika naar Scandinavië en Schotland", tip:"Roept een helder 'tjuu-tjuu-tjuu'."},
+  {naam:"Oeverloper", latijn:"Actitis hypoleucos", soort:"door", voorjaar:[4,5], najaar:[7,8], route:"Van West-Afrika naar Scandinavië", tip:"Wipt steeds met zijn achterlijf."},
+  {naam:"Dwergmeeuw", latijn:"Hydrocoloeus minutus", soort:"door", voorjaar:[4,5], najaar:[8,9,10], route:"Van de Middellandse Zee en de Atlantische kust naar Finland en Rusland", tip:"Kleinste meeuw, donkere ondervleugels."},
+  {naam:"Bosruiter", latijn:"Tringa glareola", soort:"door", voorjaar:[5], najaar:[7,8], route:"Van West-Afrika naar Scandinavië en Rusland", tip:"Op ondergelopen graslanden in kleine groepjes."},
+  {naam:"Krombekstrandloper", latijn:"Calidris ferruginea", soort:"door", voorjaar:[5], najaar:[7,8,9], route:"Van West-Afrika naar Siberië", tip:"In het voorjaar baksteenrood."},
+  {naam:"Kleine strandloper", latijn:"Calidris minuta", soort:"door", voorjaar:[5], najaar:[8,9], route:"Van Afrika naar Noord-Rusland", tip:"Piepklein, zo groot als een mus."},
+  {naam:"Morinelplevier", latijn:"Charadrius morinellus", soort:"door", voorjaar:[5], najaar:[8,9], route:"Van Noord-Afrika (Marokko) naar Noord-Scandinavië", tip:"Rust op kale akkers; heel tam."}
 ];
 
 const MAANDNAMEN = ["jan","feb","mrt","apr","mei","jun","jul","aug","sep","okt","nov","dec"];
@@ -138,6 +229,9 @@ const VOLLEDIG = ["januari","februari","maart","april","mei","juni","juli","augu
    Voor elke maand bepalen we wat de vogel doet.
    ========================================================= */
 function status(vogel, maand){
+  if (vogel.soort === "door"){
+    return (vogel.voorjaar.includes(maand) || vogel.najaar.includes(maand)) ? "door" : "weg";
+  }
   if (vogel.komt.includes(maand)) return "komt";
   if (vogel.gaat.includes(maand)) return "gaat";
   // Tel vanaf de aankomst door tot het vertrek (ook over de jaarwisseling heen)
@@ -155,6 +249,10 @@ function status(vogel, maand){
    ========================================================= */
 let gekozen = new Date().getMonth() + 1; // de maand van vandaag
 let FOTOS = {};                            // hier komen de foto's in
+let filter = "alle";                       // welke soort vogels je wilt zien
+let zoekterm = "";                         // wat je in het zoekveld typt
+const SOORTNAAM  = {zomer:"zomergast", winter:"wintergast", door:"doortrekker"};
+const ROUTELABEL = {zomer:"Overwintert in:", winter:"Broedt in:", door:"Route:"};
 
 /* =========================================================
    STAP 5: FOTO'S HALEN BIJ WIKIPEDIA
@@ -174,46 +272,51 @@ async function haalFotos(){
   try { geheugen = JSON.parse(localStorage.getItem(FOTO_GEHEUGEN)) || {}; } catch(e){}
   if (VOGELS.every(v => geheugen[v.latijn])) return geheugen;
 
-  // Vraag 1: welke foto hoort bij elke vogel?
-  const titels = VOGELS.map(v => v.latijn).join("|");
-  const url1 = "https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&redirects=1"
-             + "&prop=pageimages&piprop=thumbnail|name&pithumbsize=600&titles=" + encodeURIComponent(titels);
-  const q = (await (await fetch(url1)).json()).query;
+  // Wikipedia accepteert maximaal 50 namen per keer, dus we vragen in porties
+  const ontbreekt = VOGELS.filter(v => !geheugen[v.latijn]).map(v => v.latijn);
+  for (let i = 0; i < ontbreekt.length; i += 50){
+    const portie = ontbreekt.slice(i, i + 50);
 
-  const doorsturen = {};
-  (q.normalized || []).forEach(n => doorsturen[n.from] = n.to);
-  (q.redirects  || []).forEach(n => doorsturen[n.from] = n.to);
-  const paginas = {};
-  Object.values(q.pages).forEach(p => paginas[p.title] = p);
+    // Vraag 1: welke foto hoort bij elke vogel?
+    const url1 = "https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&redirects=1"
+               + "&prop=pageimages&piprop=thumbnail|name&pithumbsize=600&titles=" + encodeURIComponent(portie.join("|"));
+    const q = (await (await fetch(url1)).json()).query;
+    const doorsturen = {};
+    (q.normalized || []).forEach(n => doorsturen[n.from] = n.to);
+    (q.redirects  || []).forEach(n => doorsturen[n.from] = n.to);
+    const paginas = {};
+    Object.values(q.pages).forEach(p => paginas[p.title] = p);
 
-  const bestanden = [];
-  VOGELS.forEach(v => {
-    let t = v.latijn;
-    for (let i = 0; i < 3 && doorsturen[t]; i++) t = doorsturen[t];
-    const p = paginas[t];
-    if (p && p.thumbnail && p.pageimage){
-      geheugen[v.latijn] = { src: p.thumbnail.source, bestand: p.pageimage, maker: "", licentie: "" };
-      bestanden.push("File:" + p.pageimage);
+    const nieuw = [];
+    portie.forEach(latijn => {
+      let t = latijn;
+      for (let j = 0; j < 3 && doorsturen[t]; j++) t = doorsturen[t];
+      const p = paginas[t];
+      if (p && p.thumbnail && p.pageimage){
+        geheugen[latijn] = { src: p.thumbnail.source, bestand: p.pageimage, maker: "", licentie: "" };
+        nieuw.push(latijn);
+      }
+    });
+
+    // Vraag 2: wie maakte de foto en onder welke licentie?
+    if (nieuw.length){
+      const bestanden = nieuw.map(l => "File:" + geheugen[l].bestand);
+      const url2 = "https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*"
+                 + "&prop=imageinfo&iiprop=extmetadata&titles=" + encodeURIComponent(bestanden.join("|"));
+      const r2 = (await (await fetch(url2)).json()).query;
+      const info = {};
+      Object.values(r2.pages).forEach(p => {
+        const m = p.imageinfo && p.imageinfo[0].extmetadata;
+        if (m) info[p.title.replace(/^File:/, "").replace(/_/g, " ")] = {
+          maker: tekst(m.Artist && m.Artist.value),
+          licentie: (m.LicenseShortName && m.LicenseShortName.value) || ""
+        };
+      });
+      nieuw.forEach(l => {
+        const i2 = info[geheugen[l].bestand.replace(/_/g, " ")];
+        if (i2){ geheugen[l].maker = i2.maker; geheugen[l].licentie = i2.licentie; }
+      });
     }
-  });
-
-  // Vraag 2: wie maakte de foto en onder welke licentie?
-  if (bestanden.length){
-    const url2 = "https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*"
-               + "&prop=imageinfo&iiprop=extmetadata&titles=" + encodeURIComponent(bestanden.join("|"));
-    const r2 = (await (await fetch(url2)).json()).query;
-    const info = {};
-    Object.values(r2.pages).forEach(p => {
-      const m = p.imageinfo && p.imageinfo[0].extmetadata;
-      if (m) info[p.title.replace(/^File:/, "").replace(/_/g, " ")] = {
-        maker: tekst(m.Artist && m.Artist.value),
-        licentie: (m.LicenseShortName && m.LicenseShortName.value) || ""
-      };
-    });
-    Object.values(geheugen).forEach(f => {
-      const i = info[f.bestand.replace(/_/g, " ")];
-      if (i){ f.maker = i.maker; f.licentie = i.licentie; }
-    });
   }
 
   try { localStorage.setItem(FOTO_GEHEUGEN, JSON.stringify(geheugen)); } catch(e){}
@@ -245,10 +348,11 @@ function vogelKaart(v){
   return `<details class="vogel"><summary>
       ${klein}
       <span class="naam">${v.naam}</span>
-      <span class="soort">${v.soort==="zomer"?"zomergast":"wintergast"}</span>
+      <span class="soort">${SOORTNAAM[v.soort]}</span>
       <span class="latijn">${v.latijn}</span>
       <span class="jaar" aria-hidden="true">${balk}</span>
-    </summary><p class="uitleg">${v.tip}</p>${groot}</details>`;
+    </summary><p class="uitleg">${v.tip}</p>
+    <p class="route"><b>${ROUTELABEL[v.soort]}</b> ${v.route}</p>${groot}</details>`;
 }
 
 function groep(titel, vogels){
@@ -264,12 +368,24 @@ function tekenAlles(){
   document.getElementById("sub").textContent =
     gekozen === vandaag ? `Wat er in ${VOLLEDIG[gekozen-1]} gebeurt in Nederland.`
                         : `Je kijkt naar ${VOLLEDIG[gekozen-1]}.`;
-  const per = s => VOGELS.filter(v => status(v, gekozen) === s);
+  const zichtbaar = VOGELS.filter(v =>
+    (filter === "alle" || v.soort === filter) &&
+    (v.naam + " " + v.latijn).toLowerCase().includes(zoekterm));
+  const per = s => zichtbaar.filter(v => status(v, gekozen) === s);
   document.getElementById("lijst").innerHTML =
     groep("Komen nu aan", per("komt")) +
+    groep("Trekken nu door", per("door")) +
     groep("Vertrekken nu", per("gaat")) +
     groep("Zijn er nu", per("hier"));
 }
+
+/* STAP 7: ZOEKEN EN FILTEREN */
+document.getElementById("zoekveld").oninput = e => { zoekterm = e.target.value.trim().toLowerCase(); tekenAlles(); };
+document.querySelectorAll(".zoek button").forEach(b => b.onclick = () => {
+  filter = b.dataset.f;
+  document.querySelectorAll(".zoek button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  tekenAlles();
+});
 
 tekenAlles();                                   // eerst zonder foto's
 haalFotos()

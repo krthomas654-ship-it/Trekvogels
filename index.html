@@ -65,6 +65,12 @@ h2 small{font-weight:500;color:var(--mist);font-size:.9rem}
 .jaar i.door{background:var(--door)}
 .route{padding:0 .9rem .6rem;margin:0;font-size:.9rem}
 .route b{font-weight:600}
+.geluid{padding:0 .9rem .7rem}
+.geluid audio{width:100%;margin-top:.2rem}
+.speel{font:600 .9rem "Bricolage Grotesque",sans-serif;padding:.55rem 1rem;border-radius:999px;border:0;background:var(--water);color:var(--blad);cursor:pointer}
+.speel:disabled{opacity:.6;cursor:default}
+.speel:focus-visible{outline:2px solid var(--veen);outline-offset:2px}
+.geluid .bron{padding:.3rem 0 0}
 .zoek{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:.5rem}
 .zoek input{flex:1 1 100%;font:inherit;padding:.65rem .8rem;border-radius:8px;border:1px solid var(--leeg);background:var(--blad);color:var(--veen)}
 .zoek button{font:500 .85rem "Bricolage Grotesque",sans-serif;padding:.45rem .8rem;border-radius:999px;border:1px solid var(--leeg);background:transparent;color:var(--veen);cursor:pointer}
@@ -99,7 +105,7 @@ footer{margin-top:3rem;font-size:.8rem;color:var(--mist)}
 
   <div id="lijst"></div>
 
-  <footer>Versie 4. Regelmatige trekvogels van Friesland. Foto's via Wikipedia en Wikimedia Commons. Maanden zijn gemiddelden voor Nederland; per jaar en per plek kan het een paar weken schuiven.</footer>
+  <footer>Versie 5. Geluiden via Wikimedia Commons. Regelmatige trekvogels van Friesland. Foto's via Wikipedia en Wikimedia Commons. Maanden zijn gemiddelden voor Nederland; per jaar en per plek kan het een paar weken schuiven.</footer>
 </main>
 
 <script>
@@ -352,7 +358,8 @@ function vogelKaart(v){
       <span class="latijn">${v.latijn}</span>
       <span class="jaar" aria-hidden="true">${balk}</span>
     </summary><p class="uitleg">${v.tip}</p>
-    <p class="route"><b>${ROUTELABEL[v.soort]}</b> ${v.route}</p>${groot}</details>`;
+    <p class="route"><b>${ROUTELABEL[v.soort]}</b> ${v.route}</p>
+    <div class="geluid" data-l="${v.latijn}"><button class="speel">▶ Laat horen</button></div>${groot}</details>`;
 }
 
 function groep(titel, vogels){
@@ -378,6 +385,79 @@ function tekenAlles(){
     groep("Vertrekken nu", per("gaat")) +
     groep("Zijn er nu", per("hier"));
 }
+
+/* =========================================================
+   STAP 8: VOGELGELUIDEN
+   Pas als je op "Laat horen" tikt, zoekt de app op
+   Wikimedia Commons naar een geluidsopname met de Latijnse
+   naam erin. Sommige vogels hebben een nieuwe Latijnse naam
+   gekregen; oude opnames staan nog onder de oude naam,
+   dus die proberen we daarna.
+   ========================================================= */
+const OUDE_NAMEN = {
+  "Calidris pugnax":["Philomachus pugnax"], "Curruca communis":["Sylvia communis"],
+  "Curruca curruca":["Sylvia curruca"], "Spatula querquedula":["Anas querquedula"],
+  "Mareca penelope":["Anas penelope"], "Hydrocoloeus minutus":["Larus minutus"],
+  "Linaria flavirostris":["Carduelis flavirostris"], "Acanthis flammea":["Carduelis flammea"],
+  "Spinus spinus":["Carduelis spinus"], "Saxicola rubicola":["Saxicola torquata","Saxicola torquatus"],
+  "Anser serrirostris":["Anser fabalis"], "Thalasseus sandvicensis":["Sterna sandvicensis"],
+  "Sternula albifrons":["Sterna albifrons"], "Mergellus albellus":["Mergus albellus"]
+};
+const GELUID_GEHEUGEN = "trekvogels-geluiden-v1";
+
+async function zoekGeluid(latijn){
+  let geheugen = {};
+  try { geheugen = JSON.parse(localStorage.getItem(GELUID_GEHEUGEN)) || {}; } catch(e){}
+  if (geheugen[latijn]) return geheugen[latijn];
+
+  for (const naam of [latijn, ...(OUDE_NAMEN[latijn] || [])]){
+    const url = "https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*"
+              + "&generator=search&gsrnamespace=6&gsrlimit=20"
+              + "&gsrsearch=" + encodeURIComponent('filetype:audio "' + naam + '"')
+              + "&prop=imageinfo&iiprop=url|mime|extmetadata";
+    const antwoord = await (await fetch(url)).json();
+    if (!antwoord.query) continue;
+
+    const klein = naam.toLowerCase();
+    const kandidaten = Object.values(antwoord.query.pages)
+      .filter(p => p.imageinfo && /audio|ogg/.test(p.imageinfo[0].mime))
+      .filter(p => (p.title + " " + tekst(p.imageinfo[0].extmetadata?.ImageDescription?.value)).toLowerCase().includes(klein))
+      .sort((a, b) => a.index - b.index)
+      .sort((a, b) => /song|zang/i.test(b.title) - /song|zang/i.test(a.title)); // zang gaat voor
+
+    if (kandidaten.length){
+      const p = kandidaten[0], info = p.imageinfo[0], m = info.extmetadata || {};
+      const gevonden = {
+        url: info.url,
+        bestand: p.title.replace(/^File:/, ""),
+        maker: tekst(m.Artist && m.Artist.value),
+        licentie: (m.LicenseShortName && m.LicenseShortName.value) || ""
+      };
+      geheugen[latijn] = gevonden;
+      try { localStorage.setItem(GELUID_GEHEUGEN, JSON.stringify(geheugen)); } catch(e){}
+      return gevonden;
+    }
+  }
+  return null;
+}
+
+document.getElementById("lijst").addEventListener("click", async e => {
+  const knop = e.target.closest(".speel");
+  if (!knop) return;
+  const doos = knop.parentElement;
+  knop.disabled = true;
+  knop.textContent = "Geluid zoeken…";
+  try {
+    const g = await zoekGeluid(doos.dataset.l);
+    if (!g){ doos.innerHTML = `<small class="bron">Geen opname gevonden voor deze soort.</small>`; return; }
+    doos.innerHTML = `<audio controls autoplay src="${g.url}"></audio>
+      <small class="bron">Geluid: ${veilig(g.maker || "onbekend")}${g.licentie ? ", " + veilig(g.licentie) : ""},
+      <a href="https://commons.wikimedia.org/wiki/File:${encodeURIComponent(g.bestand)}" target="_blank" rel="noopener">Wikimedia Commons</a></small>`;
+  } catch(err){
+    knop.disabled = false;
+    knop.textContent = "▶ Opnieuw proberen";
+  }
+});
 
 /* STAP 7: ZOEKEN EN FILTEREN */
 document.getElementById("zoekveld").oninput = e => { zoekterm = e.target.value.trim().toLowerCase(); tekenAlles(); };
